@@ -18,10 +18,14 @@ package com.google.firebase.quickstart.fcm.java;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.WorkInfo;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -37,6 +41,8 @@ import com.google.firebase.quickstart.fcm.R;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+
+    private final MyFirebaseMessagingService mfmService = new MyFirebaseMessagingService();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,11 +120,59 @@ public class MainActivity extends AppCompatActivity {
                                 String msg = getString(R.string.msg_token_fmt, token);
                                 Log.d(TAG, msg);
                                 Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                                mfmService.onNewToken(token);
                             }
                         });
                 // [END retrieve_current_token]
             }
         });
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        mfmService.getOutputWorkInfo().observe(this, listOfWorkInfo -> {
+
+            Log.d(TAG, "====== observer 진입 ======");
+            Log.d(TAG, String.format("현재 workInfo 개수 >>> %d", listOfWorkInfo.size()));
+            if (listOfWorkInfo == null || listOfWorkInfo.isEmpty()) {
+                return;
+            }
+
+            WorkInfo workInfo = listOfWorkInfo.get(0);
+            boolean finished = workInfo.getState().isFinished();
+
+            if (finished) {
+                //Toast.makeText(MainActivity.this, workInfo.getOutputData().getString("body"), Toast.LENGTH_LONG).show();
+
+                // 제목셋팅
+                alertDialogBuilder.setTitle(workInfo.getOutputData().getString("title"));
+
+                // AlertDialog 셋팅
+                alertDialogBuilder
+                        .setMessage(workInfo.getOutputData().getString("body"))
+                        .setCancelable(false)
+                        .setPositiveButton("확인",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(
+                                            DialogInterface dialog, int id) {
+                                            //Log.d(TAG, String.format("%s -> %s", workInfo.getOutputData().getString("title"), workInfo.getOutputData().getString("body")));
+                                            dialog.dismiss();
+                                            mfmService.sendAcknowledgementToServer(workInfo.getOutputData());
+                                            listOfWorkInfo.remove(workInfo);
+                                    }
+                                });
+
+                // 다이얼로그 생성
+                AlertDialog alertDialog = alertDialogBuilder.create();
+
+                // 다이얼로그 보여주기
+                alertDialog.show();
+
+                //listOfWorkInfo.remove(workInfo);
+            }
+
+            Log.d(TAG, String.format("현재 workInfo 개수 >>> %d", listOfWorkInfo.size()));
+        });
+
     }
 
 }

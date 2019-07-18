@@ -12,11 +12,11 @@ class EntryChoiceActivity : BaseEntryChoiceActivity() {
                 Choice(
                         "Java",
                         "Run the Firebase Cloud Messaging quickstart written in Java.",
-                        Intent(this, MainActivity::class.java)),
+                        Intent(this, MainActivity::class.java))/*,
                 Choice(
                         "Kotlin",
                         "Run the Firebase Cloud Messaging written in Kotlin.",
-                        Intent(this, com.google.firebase.quickstart.fcm.kotlin.MainActivity::class.java))
+                        Intent(this, com.google.firebase.quickstart.fcm.kotlin.MainActivity::class.java))*/
         )
     }
 }
